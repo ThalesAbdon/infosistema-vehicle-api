@@ -11,11 +11,11 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
-import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { VehiclesService } from './application/vehicles.service';
+import { CreateVehicleDto } from '../dto/create-vehicle.dto';
+import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
+import { VehiclesService } from '../application/vehicles.service';
 import { ApiTags } from '@nestjs/swagger';
-import { FilterVehicleDto } from './dto/filter-vehicle.dto';
+import { FilterVehicleDto } from '../dto/filter-vehicle.dto';
 
 @ApiTags('vehicles')
 @Controller('vehicles')

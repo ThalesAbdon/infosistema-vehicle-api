@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VehicleDocument } from '../schemas/vehicle.schema';
+import { VehicleDocument } from '../infrastructure/mongoose/vehicle.schema';
 
 export class VehicleResponseDto {
   @ApiProperty()

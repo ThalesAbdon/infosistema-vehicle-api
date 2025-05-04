@@ -1,21 +1,25 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { isValidObjectId, Model } from 'mongoose';
-import { VehicleModel, VehicleDocument } from '../schemas/vehicle.schema';
+import { isValidObjectId } from 'mongoose';
 import { FilterVehicleDto } from '../dto/filter-vehicle.dto';
 import { Vehicle } from '../domain/entities/vehicle.entity';
+import {
+  VEHICLE_REPOSITORY,
+  VehicleRepository,
+} from '../domain/repositories/vehicle.repository';
 import { VehicleResponseDto } from '../dto/vehicle-response.dto';
+import { VehicleMapper } from '../mappers/vehicle.mapper';
 
 @Injectable()
 export class VehiclesService {
   constructor(
-    @InjectModel(VehicleModel.name)
-    private vehicleModel: Model<VehicleDocument>,
+    @Inject(VEHICLE_REPOSITORY)
+    private readonly repository: VehicleRepository,
   ) {}
 
   async create(data: Omit<Vehicle, 'id'>): Promise<VehicleResponseDto> {
@@ -28,8 +32,8 @@ export class VehiclesService {
       });
     }
 
-    const created = await this.vehicleModel.create(data);
-    return VehicleResponseDto.fromEntity(created);
+    const created = await this.repository.create(data as Vehicle);
+    return VehicleMapper.toResponse(created);
   }
 
   async findAll(query: FilterVehicleDto): Promise<{
@@ -58,7 +62,7 @@ export class VehiclesService {
     if (marca) filters.marca = marca;
     if (ano) filters.ano = ano;
 
-    const total = await this.vehicleModel.countDocuments(filters).exec();
+    const total = await this.repository.count(filters);
     const lastPage = Math.ceil(total / limit);
 
     if (page > lastPage && total > 0) {
@@ -67,16 +71,10 @@ export class VehiclesService {
       );
     }
 
-    const results = await this.vehicleModel
-      .find(filters)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec();
-
-    const data = results.map((v) => VehicleResponseDto.fromEntity(v));
+    const list = await this.repository.find(filters, page, limit);
 
     return {
-      data,
+      data: list.map((v) => VehicleMapper.toResponse(v)),
       page,
       limit,
       total,
@@ -91,18 +89,13 @@ export class VehiclesService {
       );
     }
 
-    const vehicle = await this.vehicleModel.findById(id).exec();
-
-    if (!vehicle) {
-      throw new NotFoundException('Veículo não encontrado com o ID informado');
-    }
-
-    return VehicleResponseDto.fromEntity(vehicle);
+    const found = await this.repository.findById(id);
+    return VehicleMapper.toResponse(found);
   }
 
   async update(
     id: string,
-    updateData: Partial<VehicleModel>,
+    updateData: Partial<Vehicle>,
   ): Promise<VehicleResponseDto> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException(
@@ -119,43 +112,29 @@ export class VehiclesService {
       });
     }
 
-    const updated = await this.vehicleModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException('Veículo não encontrado para atualização');
-    }
-
-    return VehicleResponseDto.fromEntity(updated);
+    const updated = await this.repository.update(id, updateData);
+    return VehicleMapper.toResponse(updated);
   }
 
   async remove(id: string): Promise<void> {
-    const deleted = await this.vehicleModel.findByIdAndDelete(id).exec();
-    if (!deleted) throw new NotFoundException('Veículo não encontrado');
+    await this.repository.delete(id);
   }
 
   private async validateUniqueFields(
-    data: Partial<VehicleModel>,
+    data: Partial<Vehicle>,
     ignoreId?: string,
   ): Promise<Record<string, string>> {
     const conflicts: Record<string, string> = {};
 
-    const conditions = [
+    const checks = [
       { field: 'placa', value: data.placa },
       { field: 'chassi', value: data.chassi },
       { field: 'renavam', value: data.renavam },
     ] as const;
 
-    for (const { field, value } of conditions) {
+    for (const { field, value } of checks) {
       if (!value) continue;
-
-      const query: Record<string, any> = { [field]: value };
-      if (ignoreId) query._id = { $ne: ignoreId };
-
-      const exists: VehicleDocument | null = await this.vehicleModel
-        .findOne(query)
-        .exec();
+      const exists = await this.repository.findByField(field, value, ignoreId);
       if (exists) {
         conflicts[field] = value;
       }

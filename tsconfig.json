@@ -16,6 +16,11 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@vehicles/infrastructure/*": ["src/vehicles/infrastructure/*"],
+      "@vehicles/domain/*": ["src/vehicles/domain/*"],
+      "@vehicles/dto/*": ["src/vehicles/dto/*"]
+    }
   }
 }

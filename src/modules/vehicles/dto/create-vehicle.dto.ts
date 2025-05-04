@@ -1,6 +1,6 @@
 import { IsString, IsInt, Min, Matches } from 'class-validator';
-import { MaxCurrentYear } from '../../common/validators/max-current-year.validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { MaxCurrentYear } from 'src/common/validators/max-current-year.validator';
 
 export class CreateVehicleDto {
   @ApiProperty({ example: 'BRA2E19', description: 'Placa do veículo' })
