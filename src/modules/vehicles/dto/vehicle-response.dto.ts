@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VehicleDocument } from '../infrastructure/mongoose/vehicle.schema';
 
 export class VehicleResponseDto {
   @ApiProperty()
-  id: string;
+  _id: unknown;
 
   @ApiProperty()
   placa: string;
@@ -24,26 +23,8 @@ export class VehicleResponseDto {
   ano: number;
 
   @ApiProperty({ example: '03/05/2025 10:14:22' })
-  createdAt: string;
+  createdAt: Date;
 
   @ApiProperty({ example: '03/05/2025 10:14:22' })
-  updatedAt: string;
-
-  static fromEntity(entity: VehicleDocument): VehicleResponseDto {
-    return {
-      id: String(entity._id),
-      placa: entity.placa,
-      chassi: entity.chassi,
-      renavam: entity.renavam,
-      modelo: entity.modelo,
-      marca: entity.marca,
-      ano: entity.ano,
-      createdAt: new Date(entity.createdAt).toLocaleString('pt-BR', {
-        timeZone: 'America/Sao_Paulo',
-      }),
-      updatedAt: new Date(entity.updatedAt).toLocaleString('pt-BR', {
-        timeZone: 'America/Sao_Paulo',
-      }),
-    };
-  }
+  updatedAt: Date;
 }

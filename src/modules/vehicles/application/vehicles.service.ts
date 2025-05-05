@@ -7,13 +7,12 @@ import {
 } from '@nestjs/common';
 import { isValidObjectId } from 'mongoose';
 import { FilterVehicleDto } from '../dto/filter-vehicle.dto';
-import { Vehicle } from '../domain/entities/vehicle.entity';
+import { VehicleEntity } from '../domain/entities/vehicle.entity';
 import {
   VEHICLE_REPOSITORY,
   VehicleRepository,
 } from '../domain/repositories/vehicle.repository';
 import { VehicleResponseDto } from '../dto/vehicle-response.dto';
-import { VehicleMapper } from '../mappers/vehicle.mapper';
 
 @Injectable()
 export class VehiclesService {
@@ -22,7 +21,7 @@ export class VehiclesService {
     private readonly repository: VehicleRepository,
   ) {}
 
-  async create(data: Omit<Vehicle, 'id'>): Promise<VehicleResponseDto> {
+  async create(data: Partial<VehicleEntity>): Promise<VehicleResponseDto> {
     const conflicts = await this.validateUniqueFields(data);
 
     if (Object.keys(conflicts).length > 0) {
@@ -32,8 +31,7 @@ export class VehiclesService {
       });
     }
 
-    const created = await this.repository.create(data as Vehicle);
-    return VehicleMapper.toResponse(created);
+    return await this.repository.create(data);
   }
 
   async findAll(query: FilterVehicleDto): Promise<{
@@ -43,24 +41,27 @@ export class VehiclesService {
     total: number;
     lastPage: number;
   }> {
-    const {
-      page = 1,
-      limit = 10,
-      placa,
-      chassi,
-      renavam,
-      modelo,
-      marca,
-      ano,
-    } = query;
+    const { page = 1, limit = 10, search } = query;
 
     const filters: Record<string, any> = {};
-    if (placa) filters.placa = { $regex: placa, $options: 'i' };
-    if (chassi) filters.chassi = chassi;
-    if (renavam) filters.renavam = renavam;
-    if (modelo) filters.modelo = modelo;
-    if (marca) filters.marca = marca;
-    if (ano) filters.ano = ano;
+
+    if (search) {
+      const regex = { $regex: search, $options: 'i' };
+
+      // Converte para número se possível (e válido)
+      const searchAsNumber = Number(search);
+      const isNumericSearch =
+        !isNaN(searchAsNumber) && Number.isInteger(searchAsNumber);
+
+      filters.$or = [
+        { placa: regex },
+        { chassi: regex },
+        { renavam: regex },
+        { modelo: regex },
+        { marca: regex },
+        ...(isNumericSearch ? [{ ano: searchAsNumber }] : []),
+      ];
+    }
 
     const total = await this.repository.count(filters);
     const lastPage = Math.ceil(total / limit);
@@ -74,7 +75,7 @@ export class VehiclesService {
     const list = await this.repository.find(filters, page, limit);
 
     return {
-      data: list.map((v) => VehicleMapper.toResponse(v)),
+      data: list,
       page,
       limit,
       total,
@@ -82,28 +83,27 @@ export class VehiclesService {
     };
   }
 
-  async findOne(id: string): Promise<VehicleResponseDto> {
-    if (!isValidObjectId(id)) {
+  async findOne(_id: string): Promise<VehicleResponseDto> {
+    if (!isValidObjectId(_id)) {
       throw new NotFoundException(
         'ID inválido: o valor fornecido não é um ObjectId',
       );
     }
 
-    const found = await this.repository.findById(id);
-    return VehicleMapper.toResponse(found);
+    return await this.repository.findById(_id);
   }
 
   async update(
-    id: string,
-    updateData: Partial<Vehicle>,
+    _id: string,
+    updateData: Partial<VehicleEntity>,
   ): Promise<VehicleResponseDto> {
-    if (!isValidObjectId(id)) {
+    if (!isValidObjectId(_id)) {
       throw new BadRequestException(
         'ID inválido: o valor fornecido não é um ObjectId',
       );
     }
 
-    const conflicts = await this.validateUniqueFields(updateData, id);
+    const conflicts = await this.validateUniqueFields(updateData, _id);
 
     if (Object.keys(conflicts).length > 0) {
       throw new ConflictException({
@@ -112,16 +112,15 @@ export class VehiclesService {
       });
     }
 
-    const updated = await this.repository.update(id, updateData);
-    return VehicleMapper.toResponse(updated);
+    return await this.repository.update(_id, updateData);
   }
 
-  async remove(id: string): Promise<void> {
-    await this.repository.delete(id);
+  async remove(_id: string): Promise<void> {
+    await this.repository.delete(_id);
   }
 
   private async validateUniqueFields(
-    data: Partial<Vehicle>,
+    data: Partial<VehicleEntity>,
     ignoreId?: string,
   ): Promise<Record<string, string>> {
     const conflicts: Record<string, string> = {};

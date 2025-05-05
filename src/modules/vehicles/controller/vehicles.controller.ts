@@ -33,19 +33,19 @@ export class VehiclesController {
     return this.service.findAll(query);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  @Get(':_id')
+  findOne(@Param('_id') _id: string) {
+    return this.service.findOne(_id);
   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
-    return this.service.update(id, dto);
+  @Put(':_id')
+  update(@Param('_id') _id: string, @Body() dto: UpdateVehicleDto) {
+    return this.service.update(_id, dto);
   }
 
-  @Delete(':id')
+  @Delete(':_id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('_id') _id: string) {
+    return this.service.remove(_id);
   }
 }

@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery } from 'mongoose';
-import { Vehicle } from '../../domain/entities/vehicle.entity';
 import { VehicleRepository } from '../../domain/repositories/vehicle.repository';
-import { VehicleDocument } from '../mongoose/vehicle.schema';
+import { VehicleModel } from '../mongoose/vehicle.schema';
+import { VehicleEntity } from '../../domain/entities/vehicle.entity';
 
 @Injectable()
 export class VehicleMongooseRepository implements VehicleRepository {
   constructor(
     @InjectModel('Vehicle')
-    private readonly vehicleModel: Model<VehicleDocument>,
+    private readonly vehicleModel: Model<VehicleModel>,
   ) {}
 
-  async create(vehicle: Vehicle): Promise<Vehicle> {
+  async create(vehicle: VehicleEntity): Promise<VehicleEntity> {
     const created = await this.vehicleModel.create({
       placa: vehicle.placa,
       chassi: vehicle.chassi,
@@ -22,37 +22,40 @@ export class VehicleMongooseRepository implements VehicleRepository {
       ano: vehicle.ano,
     });
 
-    return this.mapToEntity(created);
+    return created;
   }
 
   async find(
-    filters: FilterQuery<VehicleDocument>,
+    filters: FilterQuery<VehicleModel>,
     page: number,
     limit: number,
-  ): Promise<Vehicle[]> {
+  ): Promise<VehicleEntity[]> {
     const list = await this.vehicleModel
       .find(filters)
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
 
-    return list.map((doc) => this.mapToEntity(doc));
+    return list;
   }
 
-  async findById(id: string): Promise<Vehicle> {
+  async findById(id: string): Promise<VehicleModel> {
     const v = await this.vehicleModel.findById(id).exec();
     if (!v) throw new NotFoundException('Veículo não encontrado');
-    return this.mapToEntity(v);
+    return v;
   }
 
-  async update(id: string, vehicle: Partial<Vehicle>): Promise<Vehicle> {
+  async update(
+    id: string,
+    vehicle: Partial<VehicleModel>,
+  ): Promise<VehicleModel> {
     const updated = await this.vehicleModel
       .findByIdAndUpdate(id, vehicle, { new: true })
       .exec();
 
     if (!updated) throw new NotFoundException('Veículo não encontrado');
 
-    return this.mapToEntity(updated);
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
@@ -64,31 +67,17 @@ export class VehicleMongooseRepository implements VehicleRepository {
     field: 'placa' | 'chassi' | 'renavam',
     value: string,
     ignoreId?: string,
-  ): Promise<Vehicle | null> {
-    const query: FilterQuery<VehicleDocument> = { [field]: value };
+  ): Promise<VehicleModel | null> {
+    const query: FilterQuery<VehicleModel> = { [field]: value };
     if (ignoreId) {
       query._id = { $ne: ignoreId };
     }
 
     const found = await this.vehicleModel.findOne(query).exec();
-    return found ? this.mapToEntity(found) : null;
+    return found ? found : null;
   }
 
-  async count(filters: FilterQuery<VehicleDocument>): Promise<number> {
+  async count(filters: FilterQuery<VehicleModel>): Promise<number> {
     return this.vehicleModel.countDocuments(filters).exec();
-  }
-
-  private mapToEntity(doc: VehicleDocument): Vehicle {
-    return new Vehicle(
-      doc.placa,
-      doc.chassi,
-      doc.renavam,
-      doc.modelo,
-      doc.marca,
-      doc.ano,
-      String(doc._id),
-      doc.createdAt,
-      doc.updatedAt,
-    );
   }
 }

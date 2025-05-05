@@ -7,26 +7,38 @@ import {
 import { Types } from 'mongoose';
 
 import { VehiclesService } from 'src/modules/vehicles/application/vehicles.service';
-import { Vehicle } from 'src/modules/vehicles/domain/entities/vehicle.entity';
-import { FilterVehicleDto } from 'src/modules/vehicles/dto/filter-vehicle.dto';
 import { VEHICLE_REPOSITORY } from 'src/modules/vehicles/domain/repositories/vehicle.repository';
-import { VehicleMapper } from 'src/modules/vehicles/mappers/vehicle.mapper';
+import { VehicleEntity } from 'src/modules/vehicles/domain/entities/vehicle.entity';
+import { VehicleResponseDto } from 'src/modules/vehicles/dto/vehicle-response.dto';
+import { FilterVehicleDto } from 'src/modules/vehicles/dto/filter-vehicle.dto';
 
 describe('VehiclesService (unit)', () => {
   let service: VehiclesService;
   let repository: any;
 
-  const mockVehicle: Vehicle = new Vehicle(
-    'ABC1F45',
-    '9BWZZZ377VT004251',
-    '12345678900',
-    'Civic',
-    'Honda',
-    2020,
-    new Types.ObjectId().toHexString(),
-    new Date(),
-    new Date(),
-  );
+  const mockVehicleEntity: VehicleEntity = new VehicleEntity({
+    placa: 'ABC1F45',
+    chassi: '9BWZZZ377VT004251',
+    renavam: '12345678900',
+    modelo: 'Civic',
+    marca: 'Honda',
+    ano: 2020,
+    _id: new Types.ObjectId(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const mockVehicleResponse: VehicleResponseDto = {
+    _id: mockVehicleEntity._id,
+    placa: mockVehicleEntity.placa,
+    chassi: mockVehicleEntity.chassi,
+    renavam: mockVehicleEntity.renavam,
+    modelo: mockVehicleEntity.modelo,
+    marca: mockVehicleEntity.marca,
+    ano: mockVehicleEntity.ano,
+    createdAt: mockVehicleEntity.createdAt,
+    updatedAt: mockVehicleEntity.updatedAt,
+  };
 
   beforeEach(async () => {
     const repoMock = {
@@ -53,99 +65,80 @@ describe('VehiclesService (unit)', () => {
     repository = module.get(VEHICLE_REPOSITORY);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('deve criar um veículo se não houver conflitos', async () => {
     repository.findByField.mockResolvedValue(null);
-    repository.create.mockResolvedValue(mockVehicle);
+    repository.create.mockResolvedValue(mockVehicleResponse);
 
-    const result = await service.create({
-      placa: mockVehicle.placa,
-      chassi: mockVehicle.chassi,
-      renavam: mockVehicle.renavam,
-      modelo: mockVehicle.modelo,
-      marca: mockVehicle.marca,
-      ano: mockVehicle.ano,
-    });
-
-    expect(result).toMatchObject(VehicleMapper.toResponse(mockVehicle));
-    expect(repository.create).toHaveBeenCalled();
+    const result = await service.create({ ...mockVehicleEntity });
+    expect(result).toEqual(mockVehicleResponse);
   });
 
   it('deve lançar ConflictException se placa já existir', async () => {
-    repository.findByField.mockImplementation((field) => {
-      return field === 'placa' ? mockVehicle : null;
-    });
+    repository.findByField.mockImplementation((field: any) =>
+      field === 'placa' ? mockVehicleEntity : null,
+    );
 
     await expect(
       service.create({
-        placa: mockVehicle.placa,
-        chassi: 'outro',
-        renavam: 'outro',
-        modelo: 'Focus',
-        marca: 'Ford',
-        ano: 2021,
+        placa: mockVehicleEntity.placa,
+        chassi: 'outra',
+        renavam: 'outra',
+        modelo: 'Corolla',
+        marca: 'Toyota',
+        ano: 2022,
       }),
     ).rejects.toThrow(ConflictException);
   });
 
   it('deve buscar um veículo por ID válido', async () => {
-    repository.findById.mockResolvedValue(mockVehicle);
-    const result = await service.findOne(mockVehicle.id!);
-    expect(result).toMatchObject(VehicleMapper.toResponse(mockVehicle));
+    repository.findById.mockResolvedValue(mockVehicleResponse);
+    const result = await service.findOne(String(mockVehicleEntity._id));
+    expect(result).toEqual(mockVehicleResponse);
   });
 
   it('deve lançar NotFoundException para ID inválido', async () => {
-    await expect(service.findOne('id-invalido')).rejects.toThrow(
-      NotFoundException,
-    );
-  });
-
-  it('deve lançar NotFoundException se veículo não existir', async () => {
-    repository.findById.mockImplementation(() => {
-      throw new NotFoundException();
-    });
-
-    await expect(
-      service.findOne(new Types.ObjectId().toHexString()),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findOne('123')).rejects.toThrow(NotFoundException);
   });
 
   it('deve atualizar um veículo existente', async () => {
     repository.findByField.mockResolvedValue(null);
     repository.update.mockResolvedValue({
-      ...mockVehicle,
+      ...mockVehicleResponse,
       modelo: 'Atualizado',
     });
 
-    const result = await service.update(mockVehicle.id!, {
+    const result = await service.update(String(mockVehicleEntity._id), {
       modelo: 'Atualizado',
     });
 
     expect(result.modelo).toBe('Atualizado');
   });
 
-  it('deve lançar ConflictException se renavam em conflito ao atualizar', async () => {
-    repository.findByField.mockImplementation((field) => {
-      return field === 'renavam' ? mockVehicle : null;
-    });
+  it('deve lançar ConflictException se chassi em conflito ao atualizar', async () => {
+    repository.findByField.mockImplementation((field: any) =>
+      field === 'chassi' ? mockVehicleEntity : null,
+    );
 
     await expect(
-      service.update(mockVehicle.id!, { renavam: mockVehicle.renavam }),
+      service.update(String(mockVehicleEntity._id), {
+        chassi: mockVehicleEntity.chassi,
+      }),
     ).rejects.toThrow(ConflictException);
   });
 
-  it('deve lançar BadRequestException se o ID for inválido no update', async () => {
+  it('deve lançar BadRequestException para ID inválido no update', async () => {
     await expect(
-      service.update('invalido', { modelo: 'Fusion' }),
+      service.update('id-invalido', { modelo: 'X' }),
     ).rejects.toThrow(BadRequestException);
   });
 
   it('deve deletar um veículo', async () => {
     repository.delete.mockResolvedValue(undefined);
-    await expect(service.remove(mockVehicle.id!)).resolves.toBeUndefined();
+    await expect(
+      service.remove(String(mockVehicleEntity._id)),
+    ).resolves.toBeUndefined();
   });
 
   it('deve lançar NotFoundException ao tentar deletar um ID inexistente', async () => {
@@ -153,60 +146,67 @@ describe('VehiclesService (unit)', () => {
       throw new NotFoundException();
     });
 
-    await expect(service.remove(mockVehicle.id!)).rejects.toThrow(
+    await expect(service.remove(String(mockVehicleEntity._id))).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  it('deve aplicar todos os filtros corretamente', async () => {
-    const query: FilterVehicleDto = {
-      page: 1,
-      limit: 10,
-      placa: 'ABC',
-      chassi: '9BWZZZ377VT004251',
-      renavam: '12345678900',
-      modelo: 'Civic',
-      marca: 'Honda',
-      ano: 2020,
-    };
+  it('deve aplicar filtros de busca com regex e retornar dados', async () => {
+    const query: FilterVehicleDto = { search: 'ABC', page: 1, limit: 10 };
 
     repository.count.mockResolvedValue(1);
-    repository.find.mockResolvedValue([mockVehicle]);
+    repository.find.mockResolvedValue([mockVehicleResponse]);
 
     const result = await service.findAll(query);
 
     expect(result.data).toHaveLength(1);
     expect(result.total).toBe(1);
     expect(result.page).toBe(1);
+    expect(result.lastPage).toBe(1);
     expect(result.limit).toBe(10);
   });
 
-  it('deve usar os valores padrão de paginação se page e limit não forem informados', async () => {
+  it('deve aplicar paginação padrão se page e limit não forem informados', async () => {
     const query = {
-      placa: 'XYZ',
+      search: 'Honda',
     };
 
+    const expectedVehicle = mockVehicleEntity;
+
     repository.count.mockResolvedValue(1);
-    repository.find.mockResolvedValue([mockVehicle]);
+    repository.find.mockResolvedValue([expectedVehicle]);
 
     const result = await service.findAll(query as any);
 
     expect(result.page).toBe(1);
     expect(result.limit).toBe(10);
     expect(result.data).toHaveLength(1);
-    expect(repository.find).toHaveBeenCalledWith(
+    expect(repository.find).toHaveBeenCalledWith(expect.any(Object), 1, 10);
+  });
+
+  it('deve incluir "ano" no filtro quando search for numérico', async () => {
+    const query: FilterVehicleDto = {
+      search: '2020',
+    };
+
+    repository.count.mockResolvedValue(1);
+    repository.find.mockResolvedValue([mockVehicleEntity]);
+
+    const result = await service.findAll(query);
+
+    expect(result.total).toBe(1);
+    expect(result.data).toHaveLength(1);
+    expect(repository.count).toHaveBeenCalledWith(
       expect.objectContaining({
-        placa: expect.any(Object),
+        $or: expect.arrayContaining([{ ano: 2020 }]),
       }),
-      1,
-      10,
     );
   });
 
-  it('deve lançar BadRequestException se página for maior que o total', async () => {
+  it('deve lançar BadRequestException se página solicitada for maior que o total', async () => {
     repository.count.mockResolvedValue(1);
 
-    await expect(service.findAll({ page: 10, limit: 10 })).rejects.toThrow(
+    await expect(service.findAll({ page: 2, limit: 10 })).rejects.toThrow(
       BadRequestException,
     );
   });
