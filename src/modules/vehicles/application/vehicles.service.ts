@@ -48,7 +48,6 @@ export class VehiclesService {
     if (search) {
       const regex = { $regex: search, $options: 'i' };
 
-      // Converte para número se possível (e válido)
       const searchAsNumber = Number(search);
       const isNumericSearch =
         !isNaN(searchAsNumber) && Number.isInteger(searchAsNumber);
