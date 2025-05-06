@@ -1,98 +1,136 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# INFO SISTEMA VEHICLE
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Descrição
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Este é um projeto backend desenvolvido com Node.js e NestJS, com o objetivo de criar uma API RESTful para gerenciamento de veículos. A aplicação permite realizar operações de CRUD (Create, Read, Update, Delete) sobre registros de veículos, armazenando dados como placa, chassi, renavam, modelo, marca e ano.
 
-## Description
+O projeto foi estruturado com boas práticas de desenvolvimento, utilizando NestJS por sua robustez e escalabilidade, e inclui testes unitários com Jest para garantir a confiabilidade das funcionalidades principais.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Além disso, o backend está preparado para ser executado em ambiente Docker via Docker Compose, facilitando a configuração e execução da aplicação em diferentes ambientes.
 
-## Project setup
+## Conteúdo
+- [Instalação e Execução](#instalação-e-execução)
+- [Features](#features)
+    - 1.1 [Criar um veículo](#vehicle)
+    - 1.2 [Editar um veículo](#editar)
+    - 1.3 [Deletar um veículo](#deletar)
+    - 1.4 [Listar todos os veículos](#listar)
+    - 1.5 [Listar veículos e filtrá-los por id](#listar)
+- [Testes unitários](#testes)
+- [Arquitetura](#arquitetura)
+
+## Instalação e Execução
+ 
+### 1. Clonar o Repositório
+
+Clone o repositório do GitHub para sua máquina local:
 
 ```bash
-$ npm install
+git clone https://github.com/ThalesAbdon/infosistema-vehicle-api
 ```
 
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+### 2. Instalar Dependências
+Acesse a pasta root
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cd vehicles-api
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+Execute o comando:
 ```
+npm install
+```
+### 3. Configurar Variáveis de Ambiente
+Verifique as variavéis de ambiente no arquivo
+```
+.env.example
+```
+### 4. Execute o script do Docker
+```
+sudo docker compose up
+```
+quando quiser encerrar o programa dê control + C 
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+# Features
+## Vehicle  
 
-## Resources
+### Registrar um veículo 
 
-Check out a few resources that may come in handy when working with NestJS:
+  - Para criar um veículo, utilizamos uma rota POST:
+   ```http://localhost:3000/vehicles``` 
+   
+   Com o seguinte json:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+    {
+      "placa": "BGH3T52",
+      "chassi": "9BWZZZ377VT987654",
+      "renavam": "11223344556",
+      "modelo": "Celta",
+      "marca": "Chevrolet",
+      "ano": 2000
+    }
+    
+   É válido lembrar que placa, chassi e renavam são únicos; portanto, caso já existam no sistema, o usuário receberá um aviso.
+### Editar
+  - Para editar(atualizar) um veículo, utilizamos uma rota PUT
+   ```http://localhost:3000/vehicles/:id``` 
 
-## Support
+  - É necessário colocar um id válido! 
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+   Apesar de ser um PUT, o endpoint aceita atualizações parciais. Ou seja, é possível alterar apenas um campo ou todos, por exemplo:
 
-## Stay in touch
+    {
+      "modelo": "Celta",
+      "marca": "Chevrolet",
+      "ano": 2000
+    }
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Deletar
+  - Para deletar um veículo, utilizamos uma rota DELETE
+   ```http://localhost:3000/vehicles/:id``` 
+   
+  - É necessário colocar um id válido! 
 
-## License
+### Listar
+  - Para listar todos os veículos, utilizamos uma rota GET:
+   ```http://localhost:3000/vehicles``` 
+   
+  - Se não tiver nenhum parametro, então o retorno será de todos os veículos!
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+  - Também é possível listar por parametros, por exemplo: encontrar todos os veículos da marca Ford
+     ```http://localhost:3000/vehicles?search=Ford``` 
+
+### Encontrar Veículo por um id 
+   - Para buscar um veículo pelo id, utilizamos uma rota GET:
+   ```http://localhost:3000/veículos/:id``` 
+   
+  - É necessário colocar um id válido! 
+
+## Testes
+
+![Captura de tela 2025-05-06 072649](https://github.com/user-attachments/assets/44bb6d82-07ad-4833-bf96-66338d0f67e3)
+
+Foram implementados testes unitários para os principais casos de uso
+
+Para rodar basta digitar:
+   ```npm run test``` 
+       e caso queira ver a cobertura de testes:
+  ```npm run test:cov``` 
+
+
+## Arquitetura
+![arq](https://github.com/user-attachments/assets/eb4fce49-fb16-4b8a-89d4-450755d942a1)
+
+Esta arquitetura é apreciada por sua clara separação de responsabilidades. O padrão divide a aplicação em três camadas principais:
+
+Controller: Responsável por expor a funcionalidade para consumo por entidades externas, como interfaces de usuário. Atua como uma camada fina que passa solicitações para o serviço.
+
+Service: Contém a lógica de negócios da aplicação. Realiza operações necessárias e, se precisar buscar ou salvar dados, interage com a camada de Repositório.
+
+Repository: Cuida do armazenamento e recuperação de dados. Não se preocupa com quem está chamando, apenas realiza as operações solicitadas.
+
+Benefícios:
+ - Separação de Responsabilidades: Cada camada tem uma função clara e específica, facilitando a manutenção e a compreensão do código.
+ 
+ - Testabilidade: Cada camada pode ser testada isoladamente, o que simplifica os testes unitários e permite a criação de mocks para as camadas adjacentes.
+
+ - Código Limpo: Mantém o código organizado, evitando a mistura de lógica de negócios com operações de armazenamento ou controle.
+
