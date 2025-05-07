@@ -1,21 +1,18 @@
-import type { Config } from 'jest';
+import { Config } from 'jest';
 
 const config: Config = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/test/**/*.spec.ts'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
-  modulePaths: ['<rootDir>/src'],
+  testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: 'tsconfig.json',
-        useESM: false,
-      },
-    ],
+    '^.+\\.(t|j)s$': 'ts-jest',
   },
+  moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/src/$1',
+    '^@vehicles/(.*)$': '<rootDir>/src/modules/vehicles/$1',
+  },
+  coverageDirectory: './coverage',
+  testEnvironment: 'node',
 };
 
 export default config;

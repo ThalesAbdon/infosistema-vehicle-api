@@ -3,10 +3,10 @@ version: '3.8'
 services:
   mongo:
     image: mongo:6
-    restart: always
     container_name: mongodb
+    restart: always
     ports:
-      - '27017:27017'
+      - '27018:27017'
     volumes:
       - mongo_data:/data/db
 
@@ -17,11 +17,32 @@ services:
       - '3000:3000'
     depends_on:
       - mongo
+      - localstack
     environment:
-      - .env.example
+      AWS_ACCESS_KEY_ID: localstack
+      AWS_SECRET_ACCESS_KEY: localstack
+      AWS_REGION: us-east-1
+      SQS_QUEUE_NAME: vehicles-queue
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/vehicles-queue
     volumes:
       - .:/app
+      - ./temp:/app/temp
     command: npm run start:dev
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - '4566:4566'
+      - '4510-4559:4510-4559'
+    environment:
+      - SERVICES=sqs
+      - AWS_ACCESS_KEY_ID=localstack
+      - AWS_SECRET_ACCESS_KEY=localstack
+      - DEFAULT_REGION=us-east-1
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './init-scripts:/etc/localstack/init/ready.d'
 
 volumes:
   mongo_data:

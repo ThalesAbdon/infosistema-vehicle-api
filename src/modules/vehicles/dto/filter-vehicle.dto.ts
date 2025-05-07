@@ -4,39 +4,12 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class FilterVehicleDto {
   @ApiPropertyOptional({
-    example: 'ABC',
-    description: 'Busca por substring na placa',
+    example: 'corolla',
+    description: 'Campo único de busca (placa, chassi, modelo, etc.)',
   })
   @IsOptional()
   @IsString()
-  placa?: string;
-
-  @ApiPropertyOptional({ example: '9BWZZZ377VT004251' })
-  @IsOptional()
-  @IsString()
-  chassi?: string;
-
-  @ApiPropertyOptional({ example: '12345678900' })
-  @IsOptional()
-  @IsString()
-  renavam?: string;
-
-  @ApiPropertyOptional({ example: 'Civic' })
-  @IsOptional()
-  @IsString()
-  modelo?: string;
-
-  @ApiPropertyOptional({ example: 'Honda' })
-  @IsOptional()
-  @IsString()
-  marca?: string;
-
-  @ApiPropertyOptional({ example: 2020 })
-  @IsOptional()
-  @Transform(({ value }) => parseInt(value, 10))
-  @IsInt({ message: 'ano deve ser um número inteiro' })
-  @Min(1886)
-  ano?: number;
+  search?: string;
 
   @ApiPropertyOptional({ example: 1, description: 'Página atual' })
   @IsOptional()
