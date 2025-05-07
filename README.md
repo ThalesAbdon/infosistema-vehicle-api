@@ -8,6 +8,7 @@ O projeto foi estruturado com boas práticas de desenvolvimento, utilizando Nest
 
 Além disso, o backend está preparado para ser executado em ambiente Docker via Docker Compose, facilitando a configuração e execução da aplicação em diferentes ambientes.
 
+
 ## Conteúdo
 - [Instalação e Execução](#instalação-e-execução)
 - [Features](#features)
@@ -16,6 +17,7 @@ Além disso, o backend está preparado para ser executado em ambiente Docker via
     - 1.3 [Deletar um veículo](#deletar)
     - 1.4 [Listar todos os veículos](#listar)
     - 1.5 [Listar veículos e filtrá-los por id](#listar)
+    - 1.6 [Criar vários veículos usando arquivo xlsx](#criar)
 - [Testes unitários](#testes)
 - [Arquitetura](#arquitetura)
 
@@ -47,7 +49,14 @@ Verifique as variavéis de ambiente no arquivo
 ```
 sudo docker compose up
 ```
+
+### 5. Execute o script do localstack ( se necessário )
+```
+chmod +x init-scripts/create-queue.sh
+```
 quando quiser encerrar o programa dê control + C 
+
+Caso utilize o .env.example, será possível acessar o swagger pelo link: http://localhost:3000/api
 
 # Features
 ## Vehicle  
@@ -104,11 +113,19 @@ quando quiser encerrar o programa dê control + C
    
   - É necessário colocar um id válido! 
 
+### Criar
+- Essa funcionalidade permite criarmos vários veículos de uma vez só ( através de uma planilha )
+- Para isso utilizamos uma fila SQS
+- o endpoint para isso é: http://localhost:3000/vehicles/import/excel
+
 ## Testes
 
 ![Captura de tela 2025-05-06 072649](https://github.com/user-attachments/assets/44bb6d82-07ad-4833-bf96-66338d0f67e3)
 
-Foram implementados testes unitários para os principais casos de uso
+Foram implementados testes unitários para os principais casos de uso ( RESTFUL )
+
+Porém, não foram feitos testes unitários para leitura do arquivo xlsx
+![fila](https://github.com/user-attachments/assets/3b067b9e-7370-4054-93e8-e49e5fd7ec68)
 
 Para rodar basta digitar:
    ```npm run test``` 
