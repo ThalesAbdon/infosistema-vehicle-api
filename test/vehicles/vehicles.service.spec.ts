@@ -11,6 +11,7 @@ import { VEHICLE_REPOSITORY } from 'src/modules/vehicles/domain/repositories/veh
 import { VehicleEntity } from 'src/modules/vehicles/domain/entities/vehicle.entity';
 import { VehicleResponseDto } from 'src/modules/vehicles/dto/vehicle-response.dto';
 import { FilterVehicleDto } from 'src/modules/vehicles/dto/filter-vehicle.dto';
+import { SqsProducerService } from 'src/shared/aws/sqs/sqs.producer.service';
 
 describe('VehiclesService (unit)', () => {
   let service: VehiclesService;
@@ -58,6 +59,10 @@ describe('VehiclesService (unit)', () => {
           provide: VEHICLE_REPOSITORY,
           useValue: repoMock,
         },
+        {
+          provide: SqsProducerService,
+          useValue: {},
+        },
       ],
     }).compile();
 
@@ -76,8 +81,13 @@ describe('VehiclesService (unit)', () => {
   });
 
   it('deve lançar ConflictException se placa já existir', async () => {
-    repository.findByField.mockImplementation((field: any) =>
-      field === 'placa' ? mockVehicleEntity : null,
+    repository.findByField.mockImplementation(
+      (field: string, value: string) => {
+        if (field === 'placa' && value === mockVehicleEntity.placa) {
+          return mockVehicleEntity;
+        }
+        return null;
+      },
     );
 
     await expect(
@@ -98,8 +108,8 @@ describe('VehiclesService (unit)', () => {
     expect(result).toEqual(mockVehicleResponse);
   });
 
-  it('deve lançar NotFoundException para ID inválido', async () => {
-    await expect(service.findOne('123')).rejects.toThrow(NotFoundException);
+  it('deve lançar BadRequestException para ID inválido', async () => {
+    await expect(service.findOne('123')).rejects.toThrow(BadRequestException);
   });
 
   it('deve atualizar um veículo existente', async () => {
@@ -141,13 +151,13 @@ describe('VehiclesService (unit)', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('deve lançar NotFoundException ao tentar deletar um ID inexistente', async () => {
+  it('deve lançar BadRequestException ao tentar deletar um ID inexistente', async () => {
     repository.delete.mockImplementation(() => {
       throw new NotFoundException();
     });
 
     await expect(service.remove(String(mockVehicleEntity._id))).rejects.toThrow(
-      NotFoundException,
+      BadRequestException,
     );
   });
 
@@ -171,10 +181,8 @@ describe('VehiclesService (unit)', () => {
       search: 'Honda',
     };
 
-    const expectedVehicle = mockVehicleEntity;
-
     repository.count.mockResolvedValue(1);
-    repository.find.mockResolvedValue([expectedVehicle]);
+    repository.find.mockResolvedValue([mockVehicleResponse]);
 
     const result = await service.findAll(query as any);
 
@@ -207,6 +215,102 @@ describe('VehiclesService (unit)', () => {
     repository.count.mockResolvedValue(1);
 
     await expect(service.findAll({ page: 2, limit: 10 })).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('deve lançar BadRequestException com erro desconhecido em findAll', async () => {
+    repository.count.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    await expect(service.findAll({})).rejects.toThrow(BadRequestException);
+  });
+
+  it('deve lançar BadRequestException com mensagem "Erro desconhecido" para erro desconhecido', async () => {
+    repository.findByField.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    await expect(
+      service.create({
+        placa: 'AAA1234',
+        chassi: 'BBBBB12345',
+        renavam: '12345678901',
+        modelo: 'Corolla',
+        marca: 'Toyota',
+        ano: 2022,
+      }),
+    ).rejects.toThrow('Erro desconhecido');
+  });
+
+  it('deve lançar BadRequestException com erro desconhecido em findOne', async () => {
+    repository.findById.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    await expect(service.findOne('644bf40b9bfaec6e545b54ee')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('deve lançar BadRequestException com mensagem "Erro desconhecido" em update', async () => {
+    repository.findByField.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    await expect(
+      service.update('644bf40b9bfaec6e545b54ee', {
+        placa: 'AAA1234',
+      }),
+    ).rejects.toThrow('Erro desconhecido');
+  });
+
+  it('deve lançar BadRequestException com mensagem "Erro desconhecido" se erro não for instanceof Error nem ConflictException em create', async () => {
+    repository.findByField.mockResolvedValue(null);
+    repository.create.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    await expect(
+      service.create({
+        placa: 'ZZZ1234',
+        chassi: 'CHASSI123',
+        renavam: 'RENAVAM123',
+        modelo: 'Corolla',
+        marca: 'Toyota',
+        ano: 2022,
+      }),
+    ).rejects.toThrow('Erro desconhecido');
+  });
+
+  it('deve lançar BadRequestException com mensagem "Erro desconhecido" se erro não for instanceof Error nem ConflictException em create', async () => {
+    repository.findByField.mockImplementation(() => {
+      throw Object.create(null);
+    });
+
+    repository.create.mockImplementation(() => {
+      throw new Error('NÃO deveria chamar create');
+    });
+
+    await expect(
+      service.create({
+        placa: 'XPTO999',
+        chassi: 'CH999999',
+        renavam: 'REN999999',
+        modelo: 'Uno',
+        marca: 'Fiat',
+        ano: 2020,
+      }),
+    ).rejects.toThrow('Erro desconhecido');
+  });
+
+  it('deve lançar BadRequestException com erro desconhecido no método remove', async () => {
+    repository.delete.mockImplementation(() => {
+      throw Object.create(null); // <- não é instanceof Error
+    });
+
+    await expect(service.remove('644bf40b9bfaec6e545b54ee')).rejects.toThrow(
       BadRequestException,
     );
   });

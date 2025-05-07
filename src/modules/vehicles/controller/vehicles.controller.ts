@@ -22,6 +22,12 @@ import { FilterVehicleDto } from '../dto/filter-vehicle.dto';
 export class VehiclesController {
   constructor(private readonly service: VehiclesService) {}
 
+  @Get('import/excel')
+  @HttpCode(HttpStatus.OK)
+  importFromExcel() {
+    return this.service.importFromExcel();
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateVehicleDto) {
