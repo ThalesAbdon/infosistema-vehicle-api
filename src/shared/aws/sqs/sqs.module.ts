@@ -1,4 +1,3 @@
-// src/shared/aws/sqs/sqs.module.ts
 import { Module } from '@nestjs/common';
 import { SqsModule } from '@ssut/nestjs-sqs';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -17,6 +16,10 @@ import { SqsProducerService } from './sqs.producer.service';
             name: configService.get<string>('SQS_QUEUE_NAME'),
             queueUrl: configService.get<string>('SQS_QUEUE_URL'),
             region: configService.get<string>('AWS_REGION'),
+            batchSize: 1,
+            maxNumberOfMessages: 1,
+            waitTimeSeconds: 20,
+            visibilityTimeout: 300,
             credentials: {
               accessKeyId:
                 configService.get<string>('AWS_ACCESS_KEY_ID') || 'localstack',

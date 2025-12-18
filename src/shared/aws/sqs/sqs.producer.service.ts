@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SqsService } from '@ssut/nestjs-sqs';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import { ImportedVehicleDto } from 'src/common/interfaces/imported-vehicle.interface';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class SqsProducerService {
 
   async sendMessage(message: ImportedVehicleDto): Promise<void> {
     await this.sqsService.send(this.queueName, {
-      id: Date.now().toString(),
+      id: randomUUID(),
       body: message,
     });
   }

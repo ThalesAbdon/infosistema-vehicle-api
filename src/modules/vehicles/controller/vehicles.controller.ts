@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 
 import { CreateVehicleDto } from '../dto/create-vehicle.dto';
@@ -16,16 +18,18 @@ import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
 import { VehiclesService } from '../application/vehicles.service';
 import { ApiTags } from '@nestjs/swagger';
 import { FilterVehicleDto } from '../dto/filter-vehicle.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Multer } from 'multer';
 
 @ApiTags('vehicles')
 @Controller('vehicles')
 export class VehiclesController {
   constructor(private readonly service: VehiclesService) {}
 
-  @Get('import/excel')
-  @HttpCode(HttpStatus.OK)
-  importFromExcel() {
-    return this.service.importFromExcel();
+ @Post('import/excel')
+  @UseInterceptors(FileInterceptor('file'))
+  importFromExcel(@UploadedFile() file: Express.Multer.File) {
+    return this.service.importFromExcel(file);
   }
 
   @Post()

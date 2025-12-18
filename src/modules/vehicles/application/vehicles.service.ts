@@ -14,8 +14,7 @@ import {
 } from '../domain/repositories/vehicle.repository';
 import { VehicleResponseDto } from '../dto/vehicle-response.dto';
 import * as XLSX from 'xlsx';
-import { join } from 'path';
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { Multer } from 'multer';
 import { ImportedVehicleDto } from '../../../common/interfaces/imported-vehicle.interface';
 import { SqsProducerService } from '../../../shared/aws/sqs/sqs.producer.service';
 
@@ -167,78 +166,58 @@ export class VehiclesService {
     }
   }
 
-  async importFromExcel(): Promise<{ sent: number }> {
-    try {
-      const tempPath = join(process.cwd(), 'temp');
-      const files = readdirSync(tempPath);
-
-      const xlsxFiles = files.filter(
-        (file) =>
-          file.endsWith('.xlsx') && statSync(join(tempPath, file)).isFile(),
-      );
-
-      if (xlsxFiles.length === 0) {
-        throw new NotFoundException(
-          'Nenhum arquivo .xlsx encontrado na pasta assets.',
-        );
-      }
-
-      if (xlsxFiles.length > 1) {
-        throw new BadRequestException(
-          `Mais de um arquivo .xlsx encontrado: ${xlsxFiles.join(
-            ', ',
-          )}. Mantenha apenas um.`,
-        );
-      }
-
-      const filePath = join(tempPath, xlsxFiles[0]);
-      const fileBuffer = readFileSync(filePath);
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
-
-      if (!Array.isArray(jsonData) || jsonData.length === 0) {
-        throw new BadRequestException('Planilha vazia ou mal formatada.');
-      }
-
-      const firstRow = jsonData[0] as Record<string, any>;
-      const actualHeaders = Object.keys(firstRow).map((h) =>
-        h.toLowerCase().trim(),
-      );
-
-      const missingHeaders = this.REQUIRED_HEADERS.filter(
-        (required) => !actualHeaders.includes(required),
-      );
-
-      if (missingHeaders.length > 0) {
-        throw new BadRequestException(
-          `Cabeçalhos ausentes: ${missingHeaders.join(', ')}`,
-        );
-      }
-
-      const data = jsonData as ImportedVehicleDto[];
-
-      for (const item of data) {
-        try {
-          await this.producerMessage.sendMessage(item);
-        } catch (error) {
-          if (error instanceof Error) {
-            throw new BadRequestException(error.message);
-          }
-          throw new BadRequestException(error);
-        }
-      }
-
-      return { sent: data.length };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new BadRequestException(error.message);
-      }
-      throw new BadRequestException(error);
+ async importFromExcel(file: Express.Multer.File): Promise<{ sent: number }> {
+  try {
+    if (!file) {
+      throw new BadRequestException('Arquivo não enviado');
     }
+
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+    if (!Array.isArray(jsonData) || jsonData.length === 0) {
+      throw new BadRequestException('Planilha vazia ou mal formatada.');
+    }
+
+    const firstRow = jsonData[0] as Record<string, any>;
+    const actualHeaders = Object.keys(firstRow).map((h) =>
+      h.toLowerCase().trim(),
+    );
+
+    const missingHeaders = this.REQUIRED_HEADERS.filter(
+      (required) => !actualHeaders.includes(required),
+    );
+
+    if (missingHeaders.length > 0) {
+      throw new BadRequestException(
+        `Cabeçalhos ausentes: ${missingHeaders.join(', ')}`,
+      );
+    }
+
+    const data = jsonData as ImportedVehicleDto[];
+
+    for (const item of data) {
+      try {
+        await this.producerMessage.sendMessage(item);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new BadRequestException(error.message);
+        }
+        throw new BadRequestException(error);
+      }
+    }
+
+    return { sent: data.length };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new BadRequestException(error.message);
+    }
+    throw new BadRequestException(error);
   }
+}
 
   private async validateUniqueFields(
     data: Partial<VehicleEntity>,
