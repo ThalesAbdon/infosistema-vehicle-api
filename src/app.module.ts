@@ -8,7 +8,7 @@ import { AwsSqsModule } from './shared/aws/sqs/sqs.module';
   imports: [
     ConfigModule.forRoot(),
     MongooseModule.forRoot(
-      process.env.MONGO_URI || 'mongodb://localhost:27018/vehicles-db',
+      process.env.MONGO_URI || 'mongodb://localhost:27017/vehicles-db',
     ),
     VehiclesModule,
     AwsSqsModule,
